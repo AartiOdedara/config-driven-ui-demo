@@ -1,12 +1,25 @@
+// =================================================================
+// CATEGORY SECTION — Shop-by-category chips from backend config
+// =================================================================
+// Categories are received as props — they come from the backend
+// config. During Valentine's Day, the backend sends gift-related
+// categories instead of grocery categories.
+// =================================================================
 import React from 'react';
-import { categoriesConfig } from '../config/frontendConfig';
+import type { Category } from '../config/types';
 
-export function CategorySection({ themeColor }: { themeColor: string }) {
+type CategorySectionProps = {
+  categories: Category[];  // From config.categories (backend)
+  themeColor: string;      // From config.theme.primaryColor
+};
+
+export function CategorySection({ categories, themeColor }: CategorySectionProps) {
   return (
     <div className="mb-6">
       <h3 className="font-bold text-base text-gray-800 mb-3">Shop by Category</h3>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {categoriesConfig.map((cat) => (
+        {/* Iterate over categories from backend config */}
+        {categories.map((cat) => (
           <div
             key={cat.id}
             className="flex flex-col items-center min-w-[72px] cursor-pointer group"
@@ -17,7 +30,9 @@ export function CategorySection({ themeColor }: { themeColor: string }) {
             >
               {cat.emoji}
             </div>
-            <span className="text-xs font-medium mt-1.5 text-gray-600 group-hover:font-semibold">{cat.name}</span>
+            <span className="text-xs font-medium mt-1.5 text-gray-600 group-hover:font-semibold">
+              {cat.name}
+            </span>
           </div>
         ))}
       </div>

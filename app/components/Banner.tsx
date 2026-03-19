@@ -1,5 +1,8 @@
+// =================================================================
+// BANNER CARDS — Promotional banner grid from backend config
+// =================================================================
 import React from 'react';
-import { BannerCard } from '../config/configLoader';
+import type { BannerCard } from '../config/types';
 
 export function BannerCards({ banners }: { banners: BannerCard[] }) {
   return (

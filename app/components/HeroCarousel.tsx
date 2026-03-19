@@ -1,11 +1,25 @@
+// =================================================================
+// HERO CAROUSEL — Auto-rotating hero banners from backend config
+// =================================================================
+// Slides data (title, subtitle, gradient, emoji) all come from
+// config.heroCarousel. The "Order Now" button triggers the
+// "orderNow" action from config.actions via the EventEngine.
+// =================================================================
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HeroSlide } from '../config/configLoader';
+import type { HeroSlide, AppConfig } from '../config/types';
+import { executeAction } from '../engine/EventEngine';
 
-export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+type HeroCarouselProps = {
+  slides: HeroSlide[];
+  config: AppConfig;  // Needed for EventEngine action execution
+};
+
+export function HeroCarousel({ slides, config }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
 
+  // Auto-rotate slides every 4 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
@@ -28,7 +42,11 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             <div className="flex-1">
               <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight">{slide.title}</h2>
               <p className="text-sm sm:text-base opacity-90 mt-2 max-w-md">{slide.subtitle}</p>
-              <button className="mt-4 bg-white/20 backdrop-blur hover:bg-white/30 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors">
+              {/* ── Config-driven action: "orderNow" ─────────────── */}
+              <button
+                onClick={() => executeAction('orderNow', config)}
+                className="mt-4 bg-white/20 backdrop-blur hover:bg-white/30 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+              >
                 Order Now →
               </button>
             </div>
@@ -36,8 +54,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           </div>
         </div>
       ))}
-
-      {/* Dots */}
+      {/* ── Dot indicators ──────────────────────────────────────── */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
         {slides.map((_, i) => (
           <button

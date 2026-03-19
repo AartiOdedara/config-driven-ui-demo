@@ -1,86 +1,30 @@
 // =================================================================
-// CONFIG LOADER - Merges backend (API) and frontend (local) configs
-// This is a core part of the config-driven UI architecture.
+// CONFIG LOADER — Backend-only config fetching
 // =================================================================
-import { categoriesConfig, staticSectionsConfig } from './frontendConfig';
+// ALL config comes from the
+// backend API. This file simply fetches and returns it.
+//
+// Why keep this file at all?
+//   - Single place to change the fetch URL / add headers / caching
+//   - Abstraction: components import fetchConfig(), not raw fetch()
+//   - Easy to add retry logic, auth tokens, etc. later
+// =================================================================
+import type { AppConfig } from './types';
 
-export type ThemeConfig = {
-  name: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  gradientFrom: string;
-  gradientTo: string;
-  event: string | null;
-  eventTagline: string | null;
-  navStyle: 'default' | 'valentine';
-};
-
-export type HeroSlide = {
-  id: string;
-  title: string;
-  subtitle: string;
-  bgGradient: string;
-  emoji: string;
-};
-
-export type OfferStrip = {
-  text: string;
-  bgColor: string;
-  textColor: string;
-};
-
-export type Product = {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice: number;
-  unit: string;
-  emoji: string;
-  tag: string | null;
-};
-
-export type BannerCard = {
-  id: string;
-  title: string;
-  subtitle: string;
-  bgGradient: string;
-  emoji: string;
-};
-
-export type DeliveryInfo = {
-  time: string;
-  location: string;
-};
-
-export type BackendConfig = {
-  theme: ThemeConfig;
-  heroCarousel: HeroSlide[];
-  offerStrip: OfferStrip;
-  products: Product[];
-  banners: BannerCard[];
-  deliveryInfo: DeliveryInfo;
-};
-
-export type FrontendConfig = {
-  categories: typeof categoriesConfig;
-  staticSections: typeof staticSectionsConfig;
-};
-
-export type MergedConfig = BackendConfig & FrontendConfig;
-
-export async function fetchBackendConfig(event?: string): Promise<BackendConfig> {
+/**
+ * Fetches the complete application config from the backend API.
+ * The backend is the SINGLE source of truth — no local overrides.
+ *
+ * @param event - Optional event identifier (e.g. "valentine")
+ * @returns The full AppConfig object that drives every part of the UI
+ */
+export async function fetchConfig(event?: string): Promise<AppConfig> {
   const url = event ? `/api/config?event=${event}` : '/api/config';
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Failed to fetch backend config');
-  return res.json();
-}
 
-export async function getMergedConfig(event?: string): Promise<MergedConfig> {
-  const backendConfig = await fetchBackendConfig(event);
-  return {
-    ...backendConfig,
-    categories: categoriesConfig,
-    staticSections: staticSectionsConfig,
-  };
+  if (!res.ok) {
+    throw new Error(`Failed to fetch config: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json();
 }

@@ -1,14 +1,31 @@
 // =================================================================
-// BACKEND CONFIG API - This is the KEY demo point!
-// In production, this data comes from a CMS, database, or admin panel.
-// The frontend renders UI purely based on this config response.
-// Business/marketing teams can change the entire app look & feel
-// WITHOUT any code deployment - just by updating this config.
+// BACKEND CONFIG API — THE SINGLE SOURCE OF TRUTH
+// =================================================================
+// This is the ONLY place where UI configuration lives.
+// In production this data would come from a CMS, database, or admin
+// panel. The frontend contains ZERO hard-coded data — it renders
+// purely from whatever this API returns.
+//
+// Sections covered in this config:
+//   1. theme        — colors, gradients, event branding
+//   2. appInfo      — app name & tagline
+//   3. categories   — shop-by-category chips
+//   4. heroCarousel — rotating hero banners
+//   5. offerStrip   — top announcement bar
+//   6. products     — product grid items
+//   7. banners      — promotional banner cards
+//   8. deliveryInfo — delivery ETA & location
+//   9. layout       — ORDERED list of sections (drives page composition)
+//  10. actions      — event-handling config (what happens on click)
+//  11. conditions   — conditional rendering rules (show/hide sections)
+//  12. validations  — input validation rules + error messages
 // =================================================================
 import { NextRequest, NextResponse } from 'next/server';
+import type { AppConfig } from '../../config/types';
 
 // ─── NORMAL DAY CONFIG ───────────────────────────────────────────────
-const normalConfig = {
+const normalConfig: AppConfig = {
+  // ── Theme ──────────────────────────────────────────────────────
   theme: {
     name: 'default',
     primaryColor: '#6D28D9',
@@ -18,8 +35,26 @@ const normalConfig = {
     gradientTo: '#4C1D95',
     event: null,
     eventTagline: null,
-    navStyle: 'default' as const,
+    navStyle: 'default',
   },
+
+  appInfo: {
+    name: 'QuickMart',
+    tagline: 'Groceries & more in 10 minutes',
+  },
+
+  categories: [
+    { id: 'dairy', name: 'Dairy', emoji: '🥛' },
+    { id: 'bakery', name: 'Bakery', emoji: '🍞' },
+    { id: 'fruits', name: 'Fruits', emoji: '🍎' },
+    { id: 'vegetables', name: 'Veggies', emoji: '🥦' },
+    { id: 'snacks', name: 'Snacks', emoji: '🍿' },
+    { id: 'beverages', name: 'Drinks', emoji: '🥤' },
+    { id: 'meat', name: 'Meat', emoji: '🍗' },
+    { id: 'frozen', name: 'Frozen', emoji: '🧊' },
+  ],
+
+  // ── Hero Carousel ──────────────────────────────────────────────
   heroCarousel: [
     {
       id: 'hero1',
@@ -36,11 +71,15 @@ const normalConfig = {
       emoji: '🥬',
     },
   ],
+
+  // ── Offer Strip ────────────────────────────────────────────────
   offerStrip: {
     text: '🔥 Use code QUICK50 for 50% off on your first order!',
     bgColor: '#F59E0B',
     textColor: '#000',
   },
+
+  // ── Products ───────────────────────────────────────────────────
   products: [
     { id: 1, name: 'Amul Toned Milk', price: 31, originalPrice: 34, unit: '500 ml', emoji: '🥛', tag: null },
     { id: 2, name: 'Brown Bread', price: 45, originalPrice: 50, unit: '400 g', emoji: '🍞', tag: 'Bestseller' },
@@ -55,19 +94,142 @@ const normalConfig = {
     { id: 11, name: 'Coca Cola', price: 40, originalPrice: 40, unit: '750 ml', emoji: '🥤', tag: null },
     { id: 12, name: 'Lays Chips', price: 20, originalPrice: 20, unit: '52 g', emoji: '🍟', tag: 'Snack Time' },
   ],
+
+  productColumns: 4, // Number of columns in the product grid (used by ProductList)
+
+  // ── Banner Cards ───────────────────────────────────────────────
   banners: [
     { id: 'b1', title: 'Flat 100 OFF', subtitle: 'On orders above Rs.499', bgGradient: 'from-amber-500 to-orange-600', emoji: '🎁' },
     { id: 'b2', title: 'Fresh Veggies', subtitle: 'Starting Rs.19/kg', bgGradient: 'from-green-500 to-teal-600', emoji: '🥦' },
     { id: 'b3', title: 'Dairy Specials', subtitle: 'Milk, Curd & more', bgGradient: 'from-blue-500 to-cyan-600', emoji: '🧀' },
   ],
+
+  // ── Delivery Info ──────────────────────────────────────────────
   deliveryInfo: {
     time: '8-12 min',
     location: 'HSR Layout, Bangalore',
   },
+
+  // =================================================================
+  // LAYOUT — Ordered list of sections that compose the page
+  // =================================================================
+  // The SectionRenderer iterates this array top-to-bottom and renders
+  // each component. To reorder, add, or remove sections, simply
+  // change this array — no frontend code changes needed.
+  // =================================================================
+  layout: [
+    { id: 'offerStrip', type: 'OfferStrip' },
+    { id: 'hero', type: 'HeroCarousel' },
+    { id: 'categories', type: 'CategorySection' },
+    { id: 'banners', type: 'BannerCards' },
+    { id: 'promoInput', type: 'PromoCodeInput' },
+    { id: 'products', type: 'ProductList' },
+  ],
+
+  // =================================================================
+  // ACTIONS — Config-driven event handling
+  // =================================================================
+  // Components don't hard-code what happens on click. They look up
+  // an action ID and the EventEngine executes the matching handler.
+  //
+  // Action types:
+  //   "toast"              → shows a message (supports {{var}} interpolation)
+  //   "navigate"           → redirects to a URL
+  //   "validate_and_toast" → validates input first, then shows result
+  // =================================================================
+  actions: {
+    // Fires when user clicks ADD on a product card
+    addToCart: {
+      type: 'toast',
+      message: '🛒 {{productName}} added to cart!',
+    },
+    // Fires when user clicks "Order Now" on hero carousel
+    orderNow: {
+      type: 'navigate',
+      url: '/checkout',
+    },
+    // Fires when user submits a promo code — validates first
+    applyPromo: {
+      type: 'validate_and_toast',
+      validationKey: 'promoCode',
+      successMessage: '🎉 Promo code applied successfully!',
+      errorMessage: '❌ Invalid promo code',
+    },
+    // Fires when user submits a search query — validates first
+    search: {
+      type: 'validate_and_toast',
+      validationKey: 'searchQuery',
+      successMessage: '🔍 Searching…',
+      errorMessage: '⚠️ Please enter a valid search term',
+    },
+  },
+
+  // =================================================================
+  // CONDITIONS — Conditional rendering rules
+  // =================================================================
+  // Each key matches a section ID in the layout array. The
+  // ConditionalEngine evaluates the rules against the current app
+  // context (event name, etc.) to decide if the section is visible.
+  //
+  // If no condition entry exists for a section, it's always visible.
+  // If rules array is empty or omitted, the "visible" default applies.
+  // =================================================================
+  conditions: {
+    // Offer strip is always visible
+    offerStrip: { visible: true },
+    // Hero carousel is always visible
+    hero: { visible: true },
+    // Categories are always visible
+    categories: { visible: true },
+    // Banners are always visible
+    banners: { visible: true },
+    // Promo input is HIDDEN on normal days — only shown during events
+    // Rule: show when "event" field is NOT empty
+    promoInput: {
+      visible: false,
+      rules: [{ field: 'event', operator: 'neq', value: '' }],
+    },
+    // Products are always visible
+    products: { visible: true },
+  },
+
+  // =================================================================
+  // VALIDATIONS — Config-driven input validation
+  // =================================================================
+  // Each key is a field name referenced by actions via validationKey.
+  // The ValidationEngine checks value against these rules and returns
+  // config-defined error messages. ZERO validation logic lives in
+  // the component code.
+  // =================================================================
+  validations: {
+    promoCode: {
+      required: true,
+      minLength: 4,
+      maxLength: 15,
+      pattern: '^[A-Z0-9]+$',
+      messages: {
+        required: 'Promo code is required',
+        minLength: 'Promo code must be at least 4 characters',
+        maxLength: 'Promo code cannot exceed 15 characters',
+        pattern: 'Only uppercase letters and numbers allowed',
+      },
+    },
+    searchQuery: {
+      required: true,
+      minLength: 2,
+      messages: {
+        required: 'Please type something to search',
+        minLength: 'Search query must be at least 2 characters',
+      },
+    },
+  },
 };
 
 // ─── VALENTINE'S DAY CONFIG ──────────────────────────────────────────
-const valentinesConfig = {
+// Notice how EVERYTHING changes: theme, products, banners, layout
+// order, promo visibility, validation messages — all from one config.
+// ─────────────────────────────────────────────────────────────────────
+const valentinesConfig: AppConfig = {
   theme: {
     name: 'valentine',
     primaryColor: '#E11D48',
@@ -77,8 +239,25 @@ const valentinesConfig = {
     gradientTo: '#9F1239',
     event: "Valentine's Day",
     eventTagline: 'Spread the Love',
-    navStyle: 'valentine' as const,
+    navStyle: 'valentine',
   },
+
+  appInfo: {
+    name: 'QuickMart',
+    tagline: '💕 Love delivered in minutes',
+  },
+
+  categories: [
+    { id: 'flowers', name: 'Flowers', emoji: '🌹' },
+    { id: 'chocolates', name: 'Chocolates', emoji: '🍫' },
+    { id: 'gifts', name: 'Gifts', emoji: '🎁' },
+    { id: 'cakes', name: 'Cakes', emoji: '🎂' },
+    { id: 'candles', name: 'Candles', emoji: '🕯️' },
+    { id: 'balloons', name: 'Balloons', emoji: '🎈' },
+    { id: 'cards', name: 'Cards', emoji: '💌' },
+    { id: 'wine', name: 'Wine', emoji: '🍷' },
+  ],
+
   heroCarousel: [
     {
       id: 'vhero1',
@@ -95,11 +274,13 @@ const valentinesConfig = {
       emoji: '🌹',
     },
   ],
+
   offerStrip: {
     text: '💘 Use code LOVE20 for 20% off on Valentine gifts! 💘',
     bgColor: '#E11D48',
     textColor: '#fff',
   },
+
   products: [
     { id: 101, name: 'Red Roses Bouquet', price: 299, originalPrice: 499, unit: '12 stems', emoji: '🌹', tag: "Valentine's Pick" },
     { id: 102, name: 'Ferrero Rocher', price: 450, originalPrice: 550, unit: '16 pcs', emoji: '🍫', tag: 'Bestseller' },
@@ -114,22 +295,104 @@ const valentinesConfig = {
     { id: 111, name: 'Mixed Flowers', price: 499, originalPrice: 699, unit: 'Bunch', emoji: '💐', tag: 'Premium' },
     { id: 112, name: 'Photo Frame', price: 349, originalPrice: 450, unit: '6x8 inch', emoji: '🖼️', tag: 'Gift Idea' },
   ],
+
+  productColumns: 5, // Fewer columns for Valentine to make it look more spacious
+
   banners: [
     { id: 'vb1', title: 'Gift Hampers from Rs.299', subtitle: 'Same-day delivery guaranteed', bgGradient: 'from-pink-500 to-rose-600', emoji: '🎁' },
     { id: 'vb2', title: 'Roses & Bouquets', subtitle: 'Fresh flowers, premium wrapping', bgGradient: 'from-red-500 to-pink-600', emoji: '🌹' },
     { id: 'vb3', title: 'Chocolate Combos', subtitle: 'Starting Rs.199 only', bgGradient: 'from-amber-600 to-red-600', emoji: '🍫' },
   ],
+
   deliveryInfo: {
     time: '10-15 min',
     location: 'HSR Layout, Bangalore',
   },
+
+  // ── Layout — Valentine has promo input BEFORE banners ──────────
+  // This demonstrates that the page structure itself changes per event
+  layout: [
+    { id: 'offerStrip', type: 'OfferStrip' },
+    { id: 'hero', type: 'HeroCarousel' },
+    { id: 'promoInput', type: 'PromoCodeInput' },   // ← moved up for valentine
+    { id: 'categories', type: 'CategorySection' },
+    { id: 'banners', type: 'BannerCards' },
+    { id: 'products', type: 'ProductList' },
+  ],
+
+  // ── Actions — Valentine-specific messages ──────────────────────
+  actions: {
+    addToCart: {
+      type: 'toast',
+      message: '💝 {{productName}} added to your love basket!',
+    },
+    orderNow: {
+      type: 'navigate',
+      url: '/checkout?event=valentine',
+    },
+    applyPromo: {
+      type: 'validate_and_toast',
+      validationKey: 'promoCode',
+      successMessage: '💘 Valentine promo applied! You saved extra!',
+      errorMessage: "💔 That code doesn't work. Try LOVE20!",
+    },
+    search: {
+      type: 'validate_and_toast',
+      validationKey: 'searchQuery',
+      successMessage: '💕 Searching valentine gifts…',
+      errorMessage: '⚠️ Please enter a valid search term',
+    },
+  },
+
+  // ── Conditions — promo input always visible during valentine ───
+  conditions: {
+    offerStrip: { visible: true },
+    hero: { visible: true },
+    categories: { visible: true },
+    banners: { visible: true },
+    // During Valentine's Day, promo is always visible (no extra rules needed)
+    promoInput: { visible: true },
+    products: { visible: true },
+  },
+
+  // ── Validations — Valentine-specific promo rules (allows LOVE prefix) ──
+  validations: {
+    promoCode: {
+      required: true,
+      minLength: 4,
+      maxLength: 15,
+      pattern: '^[A-Z0-9]+$',
+      messages: {
+        required: 'Enter your Valentine promo code 💌',
+        minLength: 'Code must be at least 4 characters',
+        maxLength: 'Code cannot exceed 15 characters',
+        pattern: 'Uppercase letters and numbers only (e.g. LOVE20)',
+      },
+    },
+    searchQuery: {
+      required: true,
+      minLength: 2,
+      messages: {
+        required: 'What valentine gift are you looking for?',
+        minLength: 'Type at least 2 characters',
+      },
+    },
+  },
 };
 
+// =================================================================
+// GET handler — returns the appropriate config based on event param
+// =================================================================
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const event = searchParams.get('event');
+
+  // In production, this decision could query a database or CMS
   const today = new Date();
-  const isValentine = event === 'valentine' || (today.getMonth() === 1 && today.getDate() === 14);
+  const isValentine =
+    event === 'valentine' ||
+    (today.getMonth() === 1 && today.getDate() === 14);
+
   const config = isValentine ? valentinesConfig : normalConfig;
   return NextResponse.json(config);
 }

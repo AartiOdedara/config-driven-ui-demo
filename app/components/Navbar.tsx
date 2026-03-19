@@ -1,18 +1,22 @@
+// =================================================================
+// NAVBAR — Top navigation bar driven entirely by backend config
+// =================================================================
+// The app name, tagline, delivery info,
+// and even the search bar validation — all come from config.
+// =================================================================
 import React from 'react';
-import { ThemeConfig, DeliveryInfo } from '../config/configLoader';
-import { staticSectionsConfig } from '../config/frontendConfig';
+import type { AppConfig } from '../config/types';
+import { SearchBar } from './SearchBar';
 
-export function Navbar({
-  theme,
-  deliveryInfo,
-  onEventChange,
-  currentEvent,
-}: {
-  theme: ThemeConfig;
-  deliveryInfo: DeliveryInfo;
-  onEventChange: (event: string) => void;
-  currentEvent: string;
-}) {
+type NavbarProps = {
+  config: AppConfig;                       // Full config for SearchBar
+  onEventChange: (event: string) => void;  // Callback to switch events
+  currentEvent: string;                    // Current active event
+};
+
+export function Navbar({ config, onEventChange, currentEvent }: NavbarProps) {
+  const { theme, deliveryInfo, appInfo } = config;
+
   return (
     <nav
       className="sticky top-0 z-50 shadow-md"
@@ -21,21 +25,21 @@ export function Navbar({
       }}
     >
       <div className="max-w-6xl mx-auto px-4 py-3">
-        {/* Top row */}
+        {/* ── Top row: App name + event switcher ─────────────── */}
         <div className="flex items-center justify-between">
-          {/* Logo + Delivery Info */}
           <div className="flex items-center gap-3">
+            {/* App name comes from config.appInfo (backend) */}
             <div className="text-2xl font-black text-white tracking-tight">
-              {theme.event ? '💝' : '⚡'} {staticSectionsConfig.appName}
+              {theme.event ? '💝' : '⚡'} {appInfo.name}
             </div>
+            {/* Event tagline — only rendered if present in config */}
             {theme.eventTagline && (
               <span className="hidden sm:inline text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
                 {theme.eventTagline}
               </span>
             )}
           </div>
-
-          {/* Event Switcher (Demo Controls) */}
+          {/* ── Event switcher buttons ──────────────────────────── */}
           <div className="flex items-center gap-1 bg-white/10 rounded-full p-0.5">
             <button
               onClick={() => onEventChange('')}
@@ -59,8 +63,7 @@ export function Navbar({
             </button>
           </div>
         </div>
-
-        {/* Delivery bar + Search */}
+        {/* ── Second row: Delivery info + search bar ──────────── */}
         <div className="flex items-center gap-3 mt-2">
           <div className="flex items-center gap-1 text-white/90 text-xs">
             <span className="font-bold text-sm">📍</span>
@@ -69,15 +72,8 @@ export function Navbar({
               <div className="text-[10px] opacity-80">{deliveryInfo.location}</div>
             </div>
           </div>
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder='Search "milk, bread, eggs..."'
-              className="w-full bg-white/20 backdrop-blur text-white placeholder:text-white/60
-                text-sm rounded-xl px-4 py-2 pl-9 outline-none focus:bg-white/30 transition-colors"
-            />
-            <span className="absolute left-3 top-2 text-white/60 text-sm">🔍</span>
-          </div>
+          {/* SearchBar — validates search input using config rules */}
+          <SearchBar config={config} />
         </div>
       </div>
     </nav>
